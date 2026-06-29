@@ -57,13 +57,10 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Block deletion if any SKU under this product has stock on hand
+  // Block if any SKU has stock on hand
   const stockCount = await prisma.inventoryLevel.aggregate({
     _sum: { qty: true },
-    where: {
-      sku: { variant: { productId: params.id } },
-      qty: { gt: 0 },
-    },
+    where: { sku: { variant: { productId: params.id } }, qty: { gt: 0 } },
   });
   if ((stockCount._sum.qty ?? 0) > 0) {
     return NextResponse.json(
@@ -72,6 +69,24 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     );
   }
 
-  await prisma.product.delete({ where: { id: params.id } });
-  return new NextResponse(null, { status: 204 });
+  // Block if any orders reference this product's SKUs
+  const orderItemCount = await prisma.orderItem.count({
+    where: { sku: { variant: { productId: params.id } } },
+  });
+  if (orderItemCount > 0) {
+    return NextResponse.json(
+      { error: "Cannot delete a product that has order history. Deactivate it instead." },
+      { status: 409 },
+    );
+  }
+
+  try {
+    await prisma.product.delete({ where: { id: params.id } });
+    return new NextResponse(null, { status: 204 });
+  } catch {
+    return NextResponse.json(
+      { error: "Delete failed — other records still reference this product. Deactivate it instead." },
+      { status: 409 },
+    );
+  }
 }

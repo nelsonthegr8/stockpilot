@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -137,12 +137,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top bar */}
         <header className="flex h-14 items-center justify-between border-b border-border bg-background/80 backdrop-blur-sm px-4 gap-4">
-          {/* Mobile hamburger */}
+          {/* Mobile hamburger — SheetTrigger renders as <button>, don't nest a Button inside */}
           <Sheet>
-            <SheetTrigger>
-              <Button variant="ghost" size="icon" className="lg:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
+            <SheetTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "lg:hidden")}>
+              <Menu className="h-5 w-5" />
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
               <Sidebar />
@@ -163,20 +161,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <span className="sr-only">Toggle theme</span>
           </Button>
 
-          {/* User menu — DropdownMenuLabel requires a wrapping DropdownMenuGroup */}
+          {/* User menu — DropdownMenuTrigger renders as <button>, don't nest a Button inside */}
           <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
-                <Avatar className="h-7 w-7">
-                  <AvatarFallback className="text-xs bg-foreground text-background font-semibold">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="hidden sm:inline-block text-sm font-medium">
-                  {user?.name ?? user?.email}
-                </span>
-                <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-              </Button>
+            <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost" }), "flex items-center gap-2 h-9 px-2")}>
+              <Avatar className="h-7 w-7">
+                <AvatarFallback className="text-xs bg-foreground text-background font-semibold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden sm:inline-block text-sm font-medium">
+                {user?.name ?? user?.email}
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 opacity-50" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuGroup>

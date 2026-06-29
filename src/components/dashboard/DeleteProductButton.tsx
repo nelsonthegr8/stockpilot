@@ -30,7 +30,8 @@ export function DeleteProductButton({ productId, productName, redirectTo = "/das
         return;
       }
       if (!res.ok) {
-        setError("Delete failed. Please try again.");
+        const body = await res.json().catch(() => ({}));
+        setError(body.error ?? "Delete failed. Please try again.");
         setConfirming(false);
         return;
       }
