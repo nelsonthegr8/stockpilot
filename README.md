@@ -20,8 +20,18 @@ A modular full-stack Warehouse Management System built with Next.js 14, Prisma, 
 git clone https://github.com/nelsonthegr8/stockpilot.git
 cd stockpilot
 cp .env.example .env
-# Edit .env — set NEXTAUTH_SECRET to a random 32+ char string
+```
 
+Edit `.env` and set:
+- `NEXTAUTH_SECRET` — any random 32+ character string
+- `NEXTAUTH_URL` — **the URL browsers use to reach this server**
+  - Same machine: `http://localhost:3000`
+  - LAN/home server (access from other devices): `http://192.168.1.50:3000` ← use your server's IP
+  - Public domain: `https://stockpilot.yourdomain.com`
+
+> ⚠️ If `NEXTAUTH_URL` is set to `localhost` or `127.0.0.1` and you access the app from another computer, login will fail with a "Server configuration" error. Always set it to the IP or hostname that browsers actually use.
+
+```bash
 # Start all services
 docker compose up -d
 
@@ -29,7 +39,7 @@ docker compose up -d
 docker compose exec app npx prisma migrate deploy
 docker compose exec app npm run db:seed
 
-# Open http://localhost:3000
+# Open http://<your-server-ip>:3000
 # Login: admin@stockpilot.dev / admin123
 ```
 
