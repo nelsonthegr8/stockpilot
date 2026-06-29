@@ -4,12 +4,13 @@ import { PageHeader } from "@/components/dashboard/shared";
 
 const sections = [
   { href: "/dashboard/settings/users", title: "Users", description: "Invite teammates and manage roles." },
+  { href: "/dashboard/settings/channels", title: "Channels", description: "Connect and manage sales channels." },
+  { href: "/dashboard/settings/box-presets", title: "Box Presets", description: "Define standard box sizes for guided packing." },
   { href: "/dashboard/settings/printers", title: "Printers", description: "Configure label printers and defaults." },
   { href: "/dashboard/settings/shipping", title: "Shipping", description: "Select label workflow and API keys." },
   { href: "/dashboard/settings/bambubuddy", title: "BambuBuddy", description: "Control print queue integration and archive mappings." },
   { href: "/dashboard/settings/operator-buttons", title: "Operator Buttons", description: "Pair notification buttons used on the floor." },
   { href: "/dashboard/settings/system", title: "System", description: "Version and update utilities." },
-  { href: "/dashboard/settings/channels", title: "Channels", description: "Monitor connected sales channels." },
 ];
 
 export default function SettingsPage() {

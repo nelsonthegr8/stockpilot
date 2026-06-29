@@ -172,7 +172,7 @@ export function ProductEditor({
 
   return (
     <div className="space-y-6 p-6">
-      <PageHeader title={mode === "create" ? "New Product" : "Edit Product"} description="Manage product, variant, and SKU data in one place." action={<Button onClick={submitForm} disabled={saving || !name || !skuCode}>{saving ? "Saving…" : mode === "create" ? "Create Product" : "Save Changes"}</Button>} />
+      <PageHeader back={{ href: "/dashboard/products", label: "Products" }} title={mode === "create" ? "New Product" : "Edit Product"} description="Manage product, variant, and SKU data in one place." action={<Button onClick={submitForm} disabled={saving || !name || !skuCode}>{saving ? "Saving…" : mode === "create" ? "Create Product" : "Save Changes"}</Button>} />
       {error ? <Alert variant="destructive"><AlertTitle>Unable to save</AlertTitle><AlertDescription>{error}</AlertDescription></Alert> : null}
       <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
         <div className="space-y-6">

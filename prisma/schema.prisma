@@ -167,6 +167,7 @@ model SKU {
   variantPrintConfigs VariantPrintConfig[]
   skuSuppliers        SKUSupplier[]
   poItems             PurchaseOrderItem[]
+  packSetting         PackSetting?
 }
 
 model Supplier {
@@ -293,6 +294,8 @@ model Order {
   currency        String        @default("USD")
   notes           String?
   tags            String[]
+  packingMode     PackingMode   @default(GUIDED)
+  packingNotes    String?
   placedAt        DateTime      @default(now())
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -444,11 +447,17 @@ model Shipment {
   shippoShipmentId    String?
   shippoTransactionId String?
   cost                Decimal?  @db.Decimal(10, 2)
+  lengthIn            Float?
+  widthIn             Float?
+  heightIn            Float?
+  weightOz            Float?
   status              String    @default("CREATED")
   shippedAt           DateTime?
   deliveredAt         DateTime?
   voidedAt            DateTime?
   createdAt           DateTime  @default(now())
+
+  boxes ShipmentBox[]
 }
 
 model OrderFinancial {
@@ -462,6 +471,54 @@ model OrderFinancial {
   netProfit    Decimal  @default(0) @db.Decimal(10, 2)
   computedAt   DateTime @default(now())
 }
+
+enum PackingMode {
+  GUIDED
+  FREESTYLE
+}
+
+model BoxPreset {
+  id           String   @id @default(cuid())
+  name         String
+  lengthIn     Float
+  widthIn      Float
+  heightIn     Float
+  maxWeightOz  Float
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  packSettings PackSetting[]
+  shipmentBoxes ShipmentBox[]
+}
+
+model PackSetting {
+  id           String    @id @default(cuid())
+  skuId        String
+  sku          SKU       @relation(fields: [skuId], references: [id], onDelete: Cascade)
+  boxPresetId  String
+  boxPreset    BoxPreset @relation(fields: [boxPresetId], references: [id])
+  qtyPerBox    Int       @default(1)
+  packingNotes String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([skuId])
+}
+
+model ShipmentBox {
+  id          String     @id @default(cuid())
+  shipmentId  String
+  shipment    Shipment   @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  boxPresetId String?
+  boxPreset   BoxPreset? @relation(fields: [boxPresetId], references: [id])
+  lengthIn    Float?
+  widthIn     Float?
+  heightIn    Float?
+  weightOz    Float?
+  label       Int        @default(1)
+  createdAt   DateTime   @default(now())
+}
+
 
 model AppSetting {
   key       String   @id
