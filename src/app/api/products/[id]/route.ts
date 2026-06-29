@@ -57,6 +57,21 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Block deletion if any SKU under this product has stock on hand
+  const stockCount = await prisma.inventoryLevel.aggregate({
+    _sum: { qty: true },
+    where: {
+      sku: { variant: { productId: params.id } },
+      qty: { gt: 0 },
+    },
+  });
+  if ((stockCount._sum.qty ?? 0) > 0) {
+    return NextResponse.json(
+      { error: "Cannot delete a product that has inventory on hand. Adjust stock to zero first." },
+      { status: 409 },
+    );
+  }
+
   await prisma.product.delete({ where: { id: params.id } });
   return new NextResponse(null, { status: 204 });
 }

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Plus, Search } from "lucide-react";
+import { DeleteProductButton } from "@/components/dashboard/DeleteProductButton";
 
 const PROFILE_LABELS: Record<string, string> = {
   THREE_D_PRINT: "3D Print",
@@ -67,7 +68,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: { s
           <Table>
             <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Profile</TableHead><TableHead>Category</TableHead><TableHead>Variants</TableHead><TableHead>SKUs</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
             <TableBody>
-              {products.map((product) => <TableRow key={product.id}><TableCell className="font-medium">{product.name}</TableCell><TableCell><span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${PROFILE_COLORS[product.businessProfileType]}`}>{PROFILE_LABELS[product.businessProfileType]}</span></TableCell><TableCell>{product.category?.name ?? "—"}</TableCell><TableCell>{product.variants.length}</TableCell><TableCell>{product.variants.reduce((sum, variant) => sum + variant.skus.length, 0)}</TableCell><TableCell><Badge variant={product.active ? "default" : "secondary"}>{product.active ? "Active" : "Inactive"}</Badge></TableCell><TableCell><Link href={`/dashboard/products/${product.id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>View</Link></TableCell></TableRow>)}
+              {products.map((product) => <TableRow key={product.id}><TableCell className="font-medium">{product.name}</TableCell><TableCell><span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${PROFILE_COLORS[product.businessProfileType]}`}>{PROFILE_LABELS[product.businessProfileType]}</span></TableCell><TableCell>{product.category?.name ?? "—"}</TableCell><TableCell>{product.variants.length}</TableCell><TableCell>{product.variants.reduce((sum, variant) => sum + variant.skus.length, 0)}</TableCell><TableCell><Badge variant={product.active ? "default" : "secondary"}>{product.active ? "Active" : "Inactive"}</Badge></TableCell><TableCell className="flex items-center gap-1"><Link href={`/dashboard/products/${product.id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>View</Link>{role === "ADMIN" ? <DeleteProductButton productId={product.id} productName={product.name} size="sm" /> : null}</TableCell></TableRow>)}
               {products.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No products found</TableCell></TableRow> : null}
             </TableBody>
           </Table>
