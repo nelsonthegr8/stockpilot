@@ -57,10 +57,18 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Gather all SKU ids under this product
+  const skuIds = (
+    await prisma.sKU.findMany({
+      where: { variant: { productId: params.id } },
+      select: { id: true },
+    })
+  ).map((s) => s.id);
+
   // Block if any SKU has stock on hand
   const stockCount = await prisma.inventoryLevel.aggregate({
     _sum: { qty: true },
-    where: { sku: { variant: { productId: params.id } }, qty: { gt: 0 } },
+    where: { skuId: { in: skuIds }, qty: { gt: 0 } },
   });
   if ((stockCount._sum.qty ?? 0) > 0) {
     return NextResponse.json(
@@ -70,9 +78,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   }
 
   // Block if any orders reference this product's SKUs
-  const orderItemCount = await prisma.orderItem.count({
-    where: { sku: { variant: { productId: params.id } } },
-  });
+  const orderItemCount = await prisma.orderItem.count({ where: { skuId: { in: skuIds } } });
   if (orderItemCount > 0) {
     return NextResponse.json(
       { error: "Cannot delete a product that has order history. Deactivate it instead." },
@@ -80,13 +86,15 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     );
   }
 
-  try {
-    await prisma.product.delete({ where: { id: params.id } });
-    return new NextResponse(null, { status: 204 });
-  } catch {
-    return NextResponse.json(
-      { error: "Delete failed — other records still reference this product. Deactivate it instead." },
-      { status: 409 },
-    );
-  }
+  // Delete all child records not covered by schema cascade, then the product
+  await prisma.$transaction([
+    prisma.inventoryAdjustment.deleteMany({ where: { skuId: { in: skuIds } } }),
+    prisma.pickListItem.deleteMany({ where: { skuId: { in: skuIds } } }),
+    prisma.printJob.deleteMany({ where: { skuId: { in: skuIds } } }),
+    prisma.variantPrintConfig.deleteMany({ where: { skuId: { in: skuIds } } }),
+    prisma.purchaseOrderItem.deleteMany({ where: { skuId: { in: skuIds } } }),
+    prisma.product.delete({ where: { id: params.id } }),
+  ]);
+
+  return new NextResponse(null, { status: 204 });
 }
