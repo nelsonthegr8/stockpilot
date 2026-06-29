@@ -19,8 +19,8 @@ type Level = {
 };
 
 type RowState = {
-  value: string;       // the input value
-  status: "idle" | "saving" | "saved" | "error" | "removed";
+  value: string;
+  status: "idle" | "saving" | "saved" | "error";
   message?: string;
   dirty: boolean;
 };
@@ -74,11 +74,13 @@ export default function InventoryAuditPage() {
     }
 
     if (actualQty <= 0) {
-      setRows((prev) => ({
-        ...prev,
-        [level.id]: { value: "0", status: "removed", dirty: false, message: "Record removed" },
-      }));
+      // Remove the row from both state maps so the tr vanishes immediately
       setLevels((prev) => prev.filter((l) => l.id !== level.id));
+      setRows((prev) => {
+        const next = { ...prev };
+        delete next[level.id];
+        return next;
+      });
     } else {
       setRows((prev) => ({
         ...prev,
@@ -142,15 +144,14 @@ export default function InventoryAuditPage() {
                 </tr>
               </thead>
               <tbody>
-                {levels.map((level) => {
+                {levels.filter((l) => !!rows[l.id]).map((level) => {
                   const row = rows[level.id];
-                  if (!row) return null;
                   const parsedVal = parseInt(row.value, 10);
                   const willRemove = !isNaN(parsedVal) && parsedVal <= 0;
                   const isLow = level.sku.reorderPoint > 0 && level.qty <= level.sku.reorderPoint;
 
                   return (
-                    <tr key={level.id} className={`border-b border-border transition-colors ${row.status === "removed" ? "opacity-40 line-through" : row.dirty ? "bg-amber-50/60 dark:bg-amber-900/10" : ""}`}>
+                    <tr key={level.id} className={`border-b border-border transition-colors ${row.dirty ? "bg-amber-50/60 dark:bg-amber-900/10" : ""}`}>
                       <td className="px-4 py-3 font-mono">{level.sku.sku}</td>
                       <td className="px-4 py-3 text-muted-foreground">{level.sku.variant.product.name} — {level.sku.variant.name}</td>
                       <td className="px-4 py-3">{level.location.name}</td>
@@ -165,7 +166,7 @@ export default function InventoryAuditPage() {
                           step="1"
                           value={row.value}
                           onChange={(e) => handleChange(level.id, e.target.value)}
-                          disabled={row.status === "saving" || row.status === "removed"}
+                          disabled={row.status === "saving"}
                           className={`w-full text-center tabular-nums ${willRemove && row.dirty ? "border-destructive text-destructive" : ""}`}
                         />
                         {willRemove && row.dirty && (
@@ -175,7 +176,7 @@ export default function InventoryAuditPage() {
                       <td className="px-4 py-3 text-center">
                         {row.status === "saving" ? (
                           <Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" />
-                        ) : row.status !== "removed" ? (
+                        ) : (
                           <Button
                             size="sm"
                             variant={willRemove && row.dirty ? "destructive" : "outline"}
@@ -184,16 +185,13 @@ export default function InventoryAuditPage() {
                           >
                             {willRemove && row.dirty ? "Remove" : "Set"}
                           </Button>
-                        ) : null}
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         {row.status === "saved" && (
                           <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                             <CheckCircle2 className="h-3 w-3" /> {row.message}
                           </span>
-                        )}
-                        {row.status === "removed" && (
-                          <span className="text-xs text-muted-foreground">Removed</span>
                         )}
                         {row.status === "error" && (
                           <span className="flex items-center gap-1 text-xs text-destructive">
