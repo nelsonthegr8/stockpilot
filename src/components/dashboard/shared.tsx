@@ -1,24 +1,58 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ArrowLeft } from "lucide-react";
+
+export function BackButton({ href, label = "Back" }: { href?: string; label?: string }) {
+  const router = useRouter();
+  if (href) {
+    return (
+      <Link href={href} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2 gap-1.5 text-muted-foreground hover:text-foreground")}>
+        <ArrowLeft className="h-4 w-4" />
+        {label}
+      </Link>
+    );
+  }
+  return (
+    <Button variant="ghost" size="sm" onClick={() => router.back()} className="-ml-2 gap-1.5 text-muted-foreground hover:text-foreground">
+      <ArrowLeft className="h-4 w-4" />
+      {label}
+    </Button>
+  );
+}
 
 export function PageHeader({
   title,
   description,
   action,
+  back,
 }: {
   title: string;
   description?: string;
   action?: React.ReactNode;
+  back?: { href?: string; label?: string } | true;
 }) {
   return (
-    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+    <div className="flex flex-col gap-1">
+      {back ? (
+        <div>
+          <BackButton
+            href={back !== true ? back.href : undefined}
+            label={back !== true ? (back.label ?? "Back") : "Back"}
+          />
+        </div>
+      ) : null}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+          {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+        </div>
+        {action}
       </div>
-      {action}
     </div>
   );
 }

@@ -31,7 +31,7 @@ export default function PurchaseOrderDetailPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <PageHeader title={`PO ${po.id.slice(-8).toUpperCase()}`} description={`${po.supplier?.name ?? "Internal"} → ${po.location.name}`} action={<Button onClick={receiveItems} disabled={receivedAll}>Receive Selected</Button>} />
+      <PageHeader title={`PO ${po.id.slice(-8).toUpperCase()}`} description={`${po.supplier?.name ?? "Internal"} → ${po.location.name}`} back={{ href: "/dashboard/purchase-orders", label: "Purchase Orders" }} action={<Button onClick={receiveItems} disabled={receivedAll}>Receive Selected</Button>} />
       <Card><CardHeader><CardTitle>Receiving</CardTitle></CardHeader><CardContent className="space-y-4">{po.items.map((item) => <div key={item.id} className="grid gap-3 rounded-lg border p-4 md:grid-cols-[2fr_120px_120px_140px]"><div><p className="font-medium">{item.sku.sku}</p><p className="text-sm text-muted-foreground">{item.sku.variant.product.name}</p></div><div><p className="text-xs text-muted-foreground">Ordered</p><p>{item.qtyOrdered}</p></div><div><p className="text-xs text-muted-foreground">Received</p><p>{item.qtyReceived}</p></div><Input type="number" min="0" max={item.qtyOrdered - item.qtyReceived} value={receiveQty[item.id] ?? "0"} onChange={(e) => setReceiveQty((prev) => ({ ...prev, [item.id]: e.target.value }))} /></div>)}</CardContent></Card>
     </div>
   );

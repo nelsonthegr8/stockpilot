@@ -18,6 +18,7 @@ export default async function InventoryPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Inventory Levels</h1>
         <div className="flex gap-2">
+          <Link href="/dashboard/inventory/audit" className={buttonVariants({ variant: "outline" })}>Audit</Link>
           <Link href="/dashboard/inventory/count" className={buttonVariants({ variant: "outline" })}>Cycle Count</Link>
           <Link href="/dashboard/inventory/receive/printed-parts" className={buttonVariants({ variant: "outline" })}>Receive Printed Parts</Link>
           <Link href="/dashboard/inventory/receive" className={buttonVariants()}>Receive</Link>

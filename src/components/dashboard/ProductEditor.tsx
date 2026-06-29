@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import bwipjs from "bwip-js";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/dashboard/shared";
+import { DeleteProductButton } from "@/components/dashboard/DeleteProductButton";
 import { Plus, Trash2 } from "lucide-react";
 
 type CategoryOption = { id: string; name: string };
@@ -73,6 +75,8 @@ export function ProductEditor({
   initialProduct?: ProductShape;
 }) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN";
   const primaryVariant = initialProduct?.variants[0];
   const primarySku = primaryVariant?.skus[0];
   const initialAttributes = useMemo(() => {
@@ -172,7 +176,7 @@ export function ProductEditor({
 
   return (
     <div className="space-y-6 p-6">
-      <PageHeader title={mode === "create" ? "New Product" : "Edit Product"} description="Manage product, variant, and SKU data in one place." action={<Button onClick={submitForm} disabled={saving || !name || !skuCode}>{saving ? "Saving…" : mode === "create" ? "Create Product" : "Save Changes"}</Button>} />
+      <PageHeader back={{ href: "/dashboard/products", label: "Products" }} title={mode === "create" ? "New Product" : "Edit Product"} description="Manage product, variant, and SKU data in one place." action={<div className="flex items-center gap-2">{mode === "edit" && initialProduct && isAdmin ? <DeleteProductButton productId={initialProduct.id} productName={initialProduct.name} /> : null}<Button onClick={submitForm} disabled={saving || !name || !skuCode}>{saving ? "Saving…" : mode === "create" ? "Create Product" : "Save Changes"}</Button></div>} />
       {error ? <Alert variant="destructive"><AlertTitle>Unable to save</AlertTitle><AlertDescription>{error}</AlertDescription></Alert> : null}
       <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
         <div className="space-y-6">

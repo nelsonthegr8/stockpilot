@@ -27,13 +27,17 @@ export async function POST(request: Request) {
   const normalized = normalizeOrder(rawOrder, "SHOPIFY");
 
   const existing = await prisma.order.findFirst({
-    where: {
-      channelId: channel.id,
-      channelOrderId: normalized.channelOrderId,
-    },
+    where: { channelId: channel.id, channelOrderId: normalized.channelOrderId },
   });
 
   if (!existing) {
+    // Resolve SKU codes to DB IDs
+    const skuCodes = normalized.items.map((i) => i.sku).filter(Boolean) as string[];
+    const skuRecords = skuCodes.length
+      ? await prisma.sKU.findMany({ where: { sku: { in: skuCodes } } })
+      : [];
+    const skuByCode = Object.fromEntries(skuRecords.map((s) => [s.sku, s.id]));
+
     const order = await prisma.order.create({
       data: {
         channelId: channel.id,
@@ -48,12 +52,14 @@ export async function POST(request: Request) {
         currency: normalized.currency,
         placedAt: normalized.placedAt,
         items: {
-          create: normalized.items.map((item) => ({
-            skuId: item.sku ? item.sku : "unknown",
-            qty: item.qty,
-            unitPrice: item.unitPrice,
-            channelListingId: item.channelListingId,
-          })),
+          create: normalized.items
+            .filter((item) => item.sku && skuByCode[item.sku])
+            .map((item) => ({
+              skuId: skuByCode[item.sku!],
+              qty: item.qty,
+              unitPrice: item.unitPrice,
+              channelListingId: item.channelListingId,
+            })),
         },
       },
     });
