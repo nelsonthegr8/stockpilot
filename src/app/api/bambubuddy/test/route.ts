@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { testConnection } from "@/lib/bambubuddy";
 import { NextResponse } from "next/server";

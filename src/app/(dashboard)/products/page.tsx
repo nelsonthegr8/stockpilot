@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -47,7 +47,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: { s
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Products</h1>
-        {canEdit ? <Button asChild><Link href="/dashboard/products/new"><Plus className="mr-2 h-4 w-4" />New Product</Link></Button> : null}
+        {canEdit ? <Link href="/dashboard/products/new" className={buttonVariants()}><Plus className="mr-2 h-4 w-4" />New Product</Link> : null}
       </div>
       <Card>
         <CardHeader>
@@ -67,15 +67,15 @@ export default async function ProductsPage({ searchParams }: { searchParams: { s
           <Table>
             <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Profile</TableHead><TableHead>Category</TableHead><TableHead>Variants</TableHead><TableHead>SKUs</TableHead><TableHead>Status</TableHead><TableHead></TableHead></TableRow></TableHeader>
             <TableBody>
-              {products.map((product) => <TableRow key={product.id}><TableCell className="font-medium">{product.name}</TableCell><TableCell><span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${PROFILE_COLORS[product.businessProfileType]}`}>{PROFILE_LABELS[product.businessProfileType]}</span></TableCell><TableCell>{product.category?.name ?? "—"}</TableCell><TableCell>{product.variants.length}</TableCell><TableCell>{product.variants.reduce((sum, variant) => sum + variant.skus.length, 0)}</TableCell><TableCell><Badge variant={product.active ? "default" : "secondary"}>{product.active ? "Active" : "Inactive"}</Badge></TableCell><TableCell><Button variant="ghost" size="sm" asChild><Link href={`/dashboard/products/${product.id}`}>View</Link></Button></TableCell></TableRow>)}
+              {products.map((product) => <TableRow key={product.id}><TableCell className="font-medium">{product.name}</TableCell><TableCell><span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${PROFILE_COLORS[product.businessProfileType]}`}>{PROFILE_LABELS[product.businessProfileType]}</span></TableCell><TableCell>{product.category?.name ?? "—"}</TableCell><TableCell>{product.variants.length}</TableCell><TableCell>{product.variants.reduce((sum, variant) => sum + variant.skus.length, 0)}</TableCell><TableCell><Badge variant={product.active ? "default" : "secondary"}>{product.active ? "Active" : "Inactive"}</Badge></TableCell><TableCell><Link href={`/dashboard/products/${product.id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>View</Link></TableCell></TableRow>)}
               {products.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No products found</TableCell></TableRow> : null}
             </TableBody>
           </Table>
           <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
             <span>Showing {total ? (page - 1) * limit + 1 : 0}–{Math.min(page * limit, total)} of {total}</span>
             <div className="flex gap-2">
-              {page > 1 ? <Button variant="outline" size="sm" asChild><Link href={`?${new URLSearchParams({ ...Object.fromEntries(query), page: String(page - 1) }).toString()}`}>Previous</Link></Button> : null}
-              {page * limit < total ? <Button variant="outline" size="sm" asChild><Link href={`?${new URLSearchParams({ ...Object.fromEntries(query), page: String(page + 1) }).toString()}`}>Next</Link></Button> : null}
+              {page > 1 ? <Link href={`?${new URLSearchParams({ ...Object.fromEntries(query), page: String(page - 1) }).toString()}`} className={buttonVariants({ variant: "outline", size: "sm" })}>Previous</Link> : null}
+              {page * limit < total ? <Link href={`?${new URLSearchParams({ ...Object.fromEntries(query), page: String(page + 1) }).toString()}`} className={buttonVariants({ variant: "outline", size: "sm" })}>Next</Link> : null}
             </div>
           </div>
         </CardContent>

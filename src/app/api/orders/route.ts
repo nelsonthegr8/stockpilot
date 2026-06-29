@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { OrderStatus } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { routeOrder } from "@/lib/orderRouting";

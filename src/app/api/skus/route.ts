@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -19,57 +20,24 @@ const createSkuSchema = z.object({
   reorderQty: z.number().optional(),
   stlFileUrl: z.string().optional(),
   sourceStore: z.string().optional(),
+  sourcedDate: z.string().optional(),
 });
 
 export async function GET(request: Request) {
   const session = await auth();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") ?? "";
-
-  const skus = await prisma.sKU.findMany({
-    where: search
-      ? {
-          OR: [
-            { sku: { contains: search, mode: "insensitive" } },
-            { barcode: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : {},
-    include: {
-      variant: {
-        include: {
-          product: true,
-        },
-      },
-      inventoryLevels: {
-        include: {
-          location: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
-
+  const skus = await prisma.sKU.findMany({ where: search ? { OR: [{ sku: { contains: search, mode: "insensitive" } }, { barcode: { contains: search, mode: "insensitive" } }] } : {}, include: { variant: { include: { product: true } }, inventoryLevels: { include: { location: true } } }, orderBy: { createdAt: "desc" }, take: 100 });
   return NextResponse.json(skus);
 }
 
 export async function POST(request: Request) {
   const session = await auth();
-  if (!session || !["ADMIN", "MANAGER"].includes((session.user as { role?: string }).role ?? "")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
+  if (!session || !["ADMIN", "MANAGER"].includes((session.user as { role?: string }).role ?? "")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await request.json();
   const parsed = createSkuSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error }, { status: 400 });
-  }
-
-  const sku = await prisma.sKU.create({ data: parsed.data });
+  if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const sku = await prisma.sKU.create({ data: { ...parsed.data, sourcedDate: parsed.data.sourcedDate ? new Date(parsed.data.sourcedDate) : undefined } });
   return NextResponse.json(sku, { status: 201 });
 }

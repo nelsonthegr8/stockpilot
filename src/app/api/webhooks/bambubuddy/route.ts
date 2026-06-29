@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { PrintJobStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";

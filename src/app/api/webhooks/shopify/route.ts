@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { normalizeOrder } from "@/lib/channels/normalize";
 import { verifyShopifyWebhook } from "@/lib/channels/shopify";
 import { routeOrder } from "@/lib/orderRouting";

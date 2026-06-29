@@ -1,5 +1,7 @@
+export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -7,7 +9,7 @@ const channelSchema = z.object({
   name: z.string().min(1),
   type: z.enum(["ETSY", "SHOPIFY", "AMAZON", "EBAY", "MANUAL"]),
   active: z.boolean().optional(),
-  credentials: z.record(z.unknown()).optional(),
+  credentials: z.record(z.string(), z.unknown()).optional(),
 });
 
 export async function GET() {
@@ -25,6 +27,11 @@ export async function POST(request: Request) {
   const body = await request.json();
   const parsed = channelSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const channel = await prisma.salesChannel.create({ data: { ...parsed.data, credentials: parsed.data.credentials ?? {} } });
+  const channel = await prisma.salesChannel.create({
+    data: {
+      ...parsed.data,
+      credentials: (parsed.data.credentials ?? {}) as Prisma.InputJsonValue,
+    },
+  });
   return NextResponse.json(channel, { status: 201 });
 }

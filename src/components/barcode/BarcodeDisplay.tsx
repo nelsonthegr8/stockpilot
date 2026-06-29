@@ -4,11 +4,9 @@ import { useEffect, useRef } from "react";
 
 interface BarcodeDisplayProps {
   value: string;
-  width?: number;
-  height?: number;
 }
 
-export function BarcodeDisplay({ value, width = 200, height = 60 }: BarcodeDisplayProps) {
+export function BarcodeDisplay({ value }: BarcodeDisplayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {

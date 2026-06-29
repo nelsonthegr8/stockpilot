@@ -1,12 +1,14 @@
+export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 const variantSchema = z.object({
   productId: z.string(),
   name: z.string().min(1),
-  attributes: z.record(z.string()).optional(),
+  attributes: z.record(z.string(), z.string()).optional(),
   active: z.boolean().optional(),
 });
 
@@ -18,6 +20,11 @@ export async function POST(request: Request) {
   const body = await request.json();
   const parsed = variantSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const variant = await prisma.productVariant.create({ data: { ...parsed.data, attributes: parsed.data.attributes ?? {} } });
+  const variant = await prisma.productVariant.create({
+    data: {
+      ...parsed.data,
+      attributes: (parsed.data.attributes ?? {}) as Prisma.InputJsonValue,
+    },
+  });
   return NextResponse.json(variant, { status: 201 });
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -91,7 +90,7 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed?: boolean }) {
 
 function Sidebar({ className }: { className?: string }) {
   const { data: session } = useSession();
-  const role = (session?.user as any)?.role as string;
+  const role = (session?.user as { role?: string })?.role ?? "";
 
   const visibleItems = NAV_ITEMS.filter(
     (item) => !item.roles || item.roles.includes(role)

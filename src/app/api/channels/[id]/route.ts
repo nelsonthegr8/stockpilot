@@ -1,5 +1,7 @@
+export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -7,7 +9,7 @@ const channelSchema = z.object({
   name: z.string().min(1).optional(),
   type: z.enum(["ETSY", "SHOPIFY", "AMAZON", "EBAY", "MANUAL"]).optional(),
   active: z.boolean().optional(),
-  credentials: z.record(z.unknown()).optional(),
+  credentials: z.record(z.string(), z.unknown()).optional(),
   lastSyncAt: z.string().optional(),
 });
 
@@ -23,6 +25,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     where: { id: params.id },
     data: {
       ...parsed.data,
+      credentials: parsed.data.credentials as Prisma.InputJsonValue | undefined,
       lastSyncAt: parsed.data.lastSyncAt ? new Date(parsed.data.lastSyncAt) : undefined,
     },
   });

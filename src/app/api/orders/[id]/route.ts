@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { canTransition } from "@/lib/orderRouting";
 import { prisma } from "@/lib/prisma";

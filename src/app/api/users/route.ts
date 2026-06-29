@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { sendInviteEmail } from "@/lib/mailer";
 import { prisma } from "@/lib/prisma";

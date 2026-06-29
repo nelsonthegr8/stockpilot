@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 
@@ -18,9 +18,9 @@ export default async function InventoryPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Inventory Levels</h1>
         <div className="flex gap-2">
-          <Button variant="outline" asChild><Link href="/dashboard/inventory/count">Cycle Count</Link></Button>
-          <Button variant="outline" asChild><Link href="/dashboard/inventory/receive/printed-parts">Receive Printed Parts</Link></Button>
-          <Button asChild><Link href="/dashboard/inventory/receive">Receive</Link></Button>
+          <Link href="/dashboard/inventory/count" className={buttonVariants({ variant: "outline" })}>Cycle Count</Link>
+          <Link href="/dashboard/inventory/receive/printed-parts" className={buttonVariants({ variant: "outline" })}>Receive Printed Parts</Link>
+          <Link href="/dashboard/inventory/receive" className={buttonVariants()}>Receive</Link>
         </div>
       </div>
       <Card>

@@ -1,5 +1,7 @@
+export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -23,7 +25,17 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   const body = await request.json();
   const parsed = mappingSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const mapping = await prisma.variantPrintConfig.update({ where: { id: params.id }, data: parsed.data });
+  const { skuId, filamentOverrides, ...rest } = parsed.data;
+  const mapping = await prisma.variantPrintConfig.update({
+    where: { id: params.id },
+    data: {
+      ...rest,
+      ...(skuId ? { sku: { connect: { id: skuId } } } : {}),
+      ...("filamentOverrides" in parsed.data
+        ? { filamentOverrides: (filamentOverrides as Prisma.InputJsonValue | undefined) ?? Prisma.JsonNull }
+        : {}),
+    },
+  });
   return NextResponse.json(mapping);
 }
 

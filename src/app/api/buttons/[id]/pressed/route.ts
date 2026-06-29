@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { callDownstream } from "@/lib/operatorButtons";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";

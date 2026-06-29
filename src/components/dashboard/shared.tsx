@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function PageHeader({
@@ -73,9 +73,9 @@ export function EmptyState({
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
         {href && cta ? (
-          <Button asChild>
-            <Link href={href}>{cta}</Link>
-          </Button>
+          <Link href={href} className={buttonVariants()}>
+            {cta}
+          </Link>
         ) : null}
       </CardContent>
     </Card>
