@@ -190,7 +190,7 @@ export default function ChannelSettingsPage() {
 
       <div className="grid gap-4">
         {channels.length === 0 && !showForm && (
-          <p className="text-sm text-muted-foreground">No channels yet. Click "+ Add Channel" to connect one.</p>
+          <p className="text-sm text-muted-foreground">No channels yet. Click &quot;+ Add Channel&quot; to connect one.</p>
         )}
         {channels.map((channel) => (
           <Card key={channel.id}>

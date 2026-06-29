@@ -234,7 +234,7 @@ export default function ShippingOrderPage() {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">Click "Shop Shippo Rates" to load live rates, or use the manual entry below.</p>
+                <p className="text-sm text-muted-foreground">Click &quot;Shop Shippo Rates&quot; to load live rates, or use the manual entry below.</p>
               )}
             </CardContent>
           </Card>
