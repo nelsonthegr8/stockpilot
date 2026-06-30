@@ -11,9 +11,9 @@
     "test:watch": "jest --watch",
     "test:e2e": "playwright test",
     "db:migrate": "prisma migrate dev",
-    "db:deploy": "prisma migrate deploy",
+    "db:deploy": "./node_modules/.bin/prisma migrate deploy",
     "db:seed": "ts-node --project tsconfig.json prisma/seed.ts",
-    "db:generate": "prisma generate",
+    "db:generate": "./node_modules/.bin/prisma generate",
     "postinstall": "prisma generate"
   },
   "dependencies": {
