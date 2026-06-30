@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: builder
-    command: sh -c "./node_modules/.bin/prisma migrate deploy && npm run db:seed"
+    command: sh -c "./node_modules/.bin/prisma migrate deploy && ./node_modules/.bin/ts-node --project tsconfig.json prisma/seed.ts"
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/stockpilot}
     depends_on:
