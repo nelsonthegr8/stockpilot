@@ -35,9 +35,8 @@ Edit `.env` and set:
 # Start all services
 docker compose up -d
 
-# Run migrations and seed
-docker compose exec app npx prisma migrate deploy
-docker compose exec app npm run db:seed
+# Run migrations + seed (uses the builder stage which has full node_modules)
+docker compose --profile migrate run --rm migrate
 
 # Open http://<your-server-ip>:3000
 # Login: admin@stockpilot.dev / admin123
