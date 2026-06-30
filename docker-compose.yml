@@ -11,6 +11,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/stockpilot}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: "true"
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       SHIPPO_API_KEY: ${SHIPPO_API_KEY:-}
       NEXT_PUBLIC_APP_VERSION: ${NEXT_PUBLIC_APP_VERSION:-0.1.0}
