@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +15,21 @@ export default function PrintQueuePage() {
   const [status, setStatus] = useState("ALL");
   const [view, setView] = useState<"list" | "kanban">("list");
   const [search, setSearch] = useState("");
+  const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
-    fetch(`/api/print-jobs${status !== "ALL" ? `?status=${status}` : ""}`).then((res) => res.json()).then(setJobs);
+    function load() {
+      fetch(`/api/print-jobs${status !== "ALL" ? `?status=${status}` : ""}`)
+        .then((res) => res.json())
+        .then((data: PrintJob[]) =>
+          setJobs((prev) =>
+            prev.length !== data.length || data.some((j, i) => j.status !== prev[i]?.status) ? data : prev,
+          ),
+        );
+    }
+    load();
+    intervalRef.current = setInterval(load, 15_000);
+    return () => clearInterval(intervalRef.current);
   }, [status]);
 
   async function handleDelete(jobId: string) {
