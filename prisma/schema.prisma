@@ -300,13 +300,26 @@ model Order {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  items     OrderItem[]
-  pickLists PickList[]
-  shipments Shipment[]
-  printJobs PrintJob[]
-  financial OrderFinancial?
+  items       OrderItem[]
+  pickLists   PickList[]
+  shipments   Shipment[]
+  printJobs   PrintJob[]
+  financial   OrderFinancial?
+  webhookLogs WebhookLog[]
 
   @@unique([channelId, channelOrderId])
+}
+
+model WebhookLog {
+  id         String   @id @default(cuid())
+  source     String   // e.g. "SHOPIFY", "ETSY", "MANUAL"
+  topic      String   // e.g. "orders/create", "orders/updated"
+  status     String   // "received" | "processed" | "error" | "skipped"
+  rawPayload Json
+  errorMsg   String?
+  orderId    String?
+  order      Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
 }
 
 model OrderItem {

@@ -27,6 +27,7 @@ import {
   Zap,
   Sun,
   Moon,
+  Webhook,
 } from "lucide-react";
 
 interface NavItem {
@@ -51,6 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/dashboard/suppliers", label: "Suppliers", icon: Building2 },
       { href: "/dashboard/purchase-orders", label: "Purchase Orders", icon: PackageSearch },
       { href: "/dashboard/orders", label: "Orders", icon: ShoppingCart },
+      { href: "/dashboard/orders/webhooks", label: "Webhook Inbox", icon: Webhook, roles: ["ADMIN", "MANAGER"] },
     ],
   },
   {
@@ -132,7 +134,7 @@ function Sidebar({ className }: { className?: string }) {
               </p>
             )}
             <div className="space-y-0.5">
-              {group.items.map((item) => (
+              {group.items.filter((item) => !item.roles || item.roles.some((r) => r === role)).map((item) => (
                 <NavLink key={item.href} item={item} />
               ))}
             </div>

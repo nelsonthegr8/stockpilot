@@ -8,30 +8,54 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   const body = await request.text();
   const signature = request.headers.get("x-shopify-hmac-sha256") ?? "";
+  const topic = request.headers.get("x-shopify-topic") ?? "unknown";
 
   const channel = await prisma.salesChannel.findFirst({
     where: { type: "SHOPIFY", active: true },
   });
+
   if (!channel) {
-    return NextResponse.json({ error: "No active Shopify channel" }, { status: 404 });
+    return NextResponse.json({ received: true });
   }
 
   const credentials = channel.credentials as Record<string, string>;
   const webhookSecret = credentials.webhook_secret ?? "";
 
-  if (!verifyShopifyWebhook(body, signature, webhookSecret)) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  if (webhookSecret && !verifyShopifyWebhook(body, signature, webhookSecret)) {
+    return NextResponse.json({ received: true });
   }
 
-  const rawOrder = JSON.parse(body);
-  const normalized = normalizeOrder(rawOrder, "SHOPIFY");
+  // Parse raw payload safely
+  let rawPayload: unknown;
+  try {
+    rawPayload = JSON.parse(body);
+  } catch {
+    await prisma.webhookLog.create({
+      data: { source: "SHOPIFY", topic, status: "error", rawPayload: { raw: body }, errorMsg: "Invalid JSON body" },
+    });
+    return NextResponse.json({ received: true });
+  }
 
-  const existing = await prisma.order.findFirst({
-    where: { channelId: channel.id, channelOrderId: normalized.channelOrderId },
+  // Log the inbound payload immediately
+  const log = await prisma.webhookLog.create({
+    data: { source: "SHOPIFY", topic, status: "received", rawPayload: rawPayload as object },
   });
 
-  if (!existing) {
-    // Resolve SKU codes to DB IDs
+  try {
+    const normalized = normalizeOrder(rawPayload, "SHOPIFY");
+
+    const existing = await prisma.order.findFirst({
+      where: { channelId: channel.id, channelOrderId: normalized.channelOrderId },
+    });
+
+    if (existing) {
+      await prisma.webhookLog.update({
+        where: { id: log.id },
+        data: { status: "skipped", orderId: existing.id },
+      });
+      return NextResponse.json({ received: true });
+    }
+
     const skuCodes = normalized.items.map((i) => i.sku).filter(Boolean) as string[];
     const skuRecords = skuCodes.length
       ? await prisma.sKU.findMany({ where: { sku: { in: skuCodes } } })
@@ -64,8 +88,20 @@ export async function POST(request: Request) {
       },
     });
 
+    await prisma.webhookLog.update({
+      where: { id: log.id },
+      data: { status: "processed", orderId: order.id },
+    });
+
     await routeOrder(order.id);
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    await prisma.webhookLog.update({
+      where: { id: log.id },
+      data: { status: "error", errorMsg },
+    });
   }
 
   return NextResponse.json({ received: true });
 }
+
