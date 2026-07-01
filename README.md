@@ -24,12 +24,10 @@ cp .env.example .env
 
 Edit `.env` and set:
 - `NEXTAUTH_SECRET` — any random 32+ character string
-- `NEXTAUTH_URL` — **the URL browsers use to reach this server**
-  - Same machine: `http://localhost:3000`
-  - LAN/home server (access from other devices): `http://192.168.1.50:3000` ← use your server's IP
-  - Public domain: `https://stockpilot.yourdomain.com`
 
-> ⚠️ If `NEXTAUTH_URL` is set to `localhost` or `127.0.0.1` and you access the app from another computer, login will fail with a "Server configuration" error. Always set it to the IP or hostname that browsers actually use.
+> **Accessing from other devices on your network:** No extra configuration needed. The app automatically detects the host from each request. Just navigate to `http://<your-server-ip>:3000` from any device on the same network.
+>
+> **Running without Docker (bare metal):** Set `NEXTAUTH_URL=http://<your-server-ip-or-domain>:3000` in your `.env` file so NextAuth knows the canonical URL.
 
 ```bash
 # Start all services
