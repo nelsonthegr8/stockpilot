@@ -65,7 +65,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (body.status) {
     const current = await prisma.order.findUniqueOrThrow({
       where: { id: params.id },
-      select: { status: true },
+      select: { status: true, items: { select: { skuId: true, qty: true, stockReserved: true } } },
     });
 
     if (!canTransition(current.status, body.status)) {
@@ -73,6 +73,30 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         { error: `Cannot transition from ${current.status} to ${body.status}` },
         { status: 400 },
       );
+    }
+
+    if (body.status === "SHIPPED") {
+      const order = await prisma.$transaction(async (tx) => {
+        const updated = await tx.order.update({ where: { id: params.id }, data: body });
+        for (const item of current.items) {
+          if (!item.stockReserved) continue;
+          const levels = await tx.inventoryLevel.findMany({ where: { skuId: item.skuId } });
+          let remaining = item.qty;
+          for (const level of levels) {
+            if (remaining <= 0) break;
+            const dec = Math.min(level.reservedQty, remaining);
+            if (dec > 0) {
+              await tx.inventoryLevel.update({
+                where: { id: level.id },
+                data: { qty: { decrement: dec }, reservedQty: { decrement: dec } },
+              });
+              remaining -= dec;
+            }
+          }
+        }
+        return updated;
+      });
+      return NextResponse.json(order);
     }
   }
 
