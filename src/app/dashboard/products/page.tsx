@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Plus, Search } from "lucide-react";
 import { DeleteProductButton } from "@/components/dashboard/DeleteProductButton";
+import { PageHeader } from "@/components/dashboard/shared";
 
 const PROFILE_LABELS: Record<string, string> = {
   THREE_D_PRINT: "3D Print",
@@ -47,8 +48,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: { s
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Products</h1>
-        {canEdit ? <Link href="/dashboard/products/new" className={buttonVariants()}><Plus className="mr-2 h-4 w-4" />New Product</Link> : null}
+        <PageHeader title="Products" description="Manage your product catalog" action={canEdit ? <Link href="/dashboard/products/new" className={buttonVariants()}><Plus className="mr-2 h-4 w-4" />New Product</Link> : undefined} />
       </div>
       <Card>
         <CardHeader>
