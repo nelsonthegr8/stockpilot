@@ -1,4 +1,4 @@
-import { Prisma, PrintJobStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { decrypt } from "./encrypt";
 
@@ -108,12 +108,6 @@ export async function queuePrint(config: VariantPrintConfigData, qty: number, pr
   }
 }
 
-export async function pollQueue(url: string, apiKey: string): Promise<Array<{ id: number; status: string }>> {
-  const res = await fetch(`${url}/api/v1/queue/`, { headers: { "X-API-Key": apiKey } });
-  if (!res.ok) throw new Error(`BambuBuddy poll failed: ${res.status}`);
-  return res.json();
-}
-
 export async function testConnection(): Promise<boolean> {
   try {
     const { url, apiKey } = await getConfig();
@@ -124,45 +118,4 @@ export async function testConnection(): Promise<boolean> {
   }
 }
 
-function mapBambuStatus(status: string): PrintJobStatus {
-  switch (status) {
-    case "pending":
-      return PrintJobStatus.SENT_TO_BAMBUBUDDY;
-    case "printing":
-      return PrintJobStatus.PRINTING;
-    case "completed":
-      return PrintJobStatus.DONE;
-    case "failed":
-      return PrintJobStatus.FAILED;
-    default:
-      return PrintJobStatus.SENT_TO_BAMBUBUDDY;
-  }
-}
 
-export async function syncPrintJobStatuses(): Promise<void> {
-  const { url, apiKey, enabled } = await getConfig();
-  if (!enabled) return;
-  const queueItems = await pollQueue(url, apiKey);
-  const activeJobs = await prisma.printJob.findMany({
-    where: { status: { in: [PrintJobStatus.SENT_TO_BAMBUBUDDY, PrintJobStatus.PRINTING] }, bambuJobId: { not: null } },
-  });
-  for (const job of activeJobs) {
-    const queueItem = queueItems.find((q) => q.id === job.bambuJobId);
-    if (!queueItem) continue;
-    const newStatus = mapBambuStatus(queueItem.status);
-    if (newStatus !== job.status) {
-      await prisma.printJob.update({
-        where: { id: job.id },
-        data: { status: newStatus, completedAt: newStatus === PrintJobStatus.DONE ? new Date() : undefined },
-      });
-      if (newStatus === PrintJobStatus.DONE) {
-        const allJobsDone = await prisma.printJob.count({
-          where: { orderId: job.orderId, status: { not: PrintJobStatus.DONE } },
-        });
-        if (allJobsDone === 0) {
-          await prisma.order.update({ where: { id: job.orderId }, data: { status: "READY_TO_SHIP" } });
-        }
-      }
-    }
-  }
-}

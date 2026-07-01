@@ -25,8 +25,14 @@ export default function PrintedPartsReceivePage() {
   const filtered = skus.filter((sku) => !search || sku.sku.toLowerCase().includes(search.toLowerCase()) || sku.barcode?.includes(search));
 
   async function confirmReceipt() {
-    await fetch("/api/inventory/adjust", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ skuId, locationId, qty: Number(qty), reason: "PRINTED_PARTS_RECEIVE" }) });
-    setMessage(`Received ${qty} units and generated ready-to-print label data for ${filtered.find((item) => item.id === skuId)?.sku ?? "SKU"}.`);
+    const res = await fetch("/api/inventory/adjust", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ skuId, locationId, qty: Number(qty), reason: "PRINTED_PARTS_RECEIVE" }) });
+    if (!res.ok) { setMessage("Failed to record receipt."); return; }
+    await fetch("/api/inventory/fulfill-pending", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ skuId, locationId }),
+    });
+    setMessage(`Received ${qty} units. Checked pending orders for fulfillment.`);
   }
 
   return <div className="space-y-6 p-6"><PageHeader back={{ href: "/dashboard/inventory", label: "Inventory" }} title="Receive Printed Parts" description="Quick-flow for freshly printed inventory with label prep." /><Card><CardHeader><CardTitle>Printed Part Intake</CardTitle></CardHeader><CardContent className="grid gap-4 md:grid-cols-2"><Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Scan barcode or search SKU" /><select value={locationId} onChange={(e) => setLocationId(e.target.value)} className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">{locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select><select value={skuId} onChange={(e) => setSkuId(e.target.value)} className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm md:col-span-2"><option value="">Select SKU</option>{filtered.map((sku) => <option key={sku.id} value={sku.id}>{sku.sku} — {sku.variant.product.name}</option>)}</select><Input type="number" value={qty} onChange={(e) => setQty(e.target.value)} /><Button onClick={confirmReceipt}>Confirm & Generate Labels</Button></CardContent></Card>{message ? <Card><CardContent className="p-4 text-sm">{message}</CardContent></Card> : null}</div>;
