@@ -56,11 +56,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
+    // Resolve SKUs by sku code first, then fall back to channelVariantId
     const skuCodes = normalized.items.map((i) => i.sku).filter(Boolean) as string[];
-    const skuRecords = skuCodes.length
-      ? await prisma.sKU.findMany({ where: { sku: { in: skuCodes } } })
-      : [];
-    const skuByCode = Object.fromEntries(skuRecords.map((s) => [s.sku, s.id]));
+    const variantIds = normalized.items.map((i) => i.channelListingId).filter(Boolean) as string[];
+
+    const [skuByCode, variantPrintConfigs] = await Promise.all([
+      skuCodes.length
+        ? prisma.sKU.findMany({ where: { sku: { in: skuCodes } } }).then((rows) =>
+            Object.fromEntries(rows.map((s) => [s.sku, s.id]))
+          )
+        : Promise.resolve({} as Record<string, string>),
+      variantIds.length
+        ? prisma.variantPrintConfig.findMany({
+            where: { channelVariantId: { in: variantIds } },
+            select: { channelVariantId: true, skuId: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const skuByVariantId = Object.fromEntries(
+      variantPrintConfigs.map((c) => [c.channelVariantId, c.skuId])
+    );
+
+    const resolvedItems = normalized.items
+      .map((item) => {
+        const skuId = (item.sku && skuByCode[item.sku]) || skuByVariantId[item.channelListingId];
+        return skuId ? { skuId, qty: item.qty, unitPrice: item.unitPrice, channelListingId: item.channelListingId } : null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
 
     const order = await prisma.order.create({
       data: {
@@ -76,14 +99,7 @@ export async function POST(request: Request) {
         currency: normalized.currency,
         placedAt: normalized.placedAt,
         items: {
-          create: normalized.items
-            .filter((item) => item.sku && skuByCode[item.sku])
-            .map((item) => ({
-              skuId: skuByCode[item.sku!],
-              qty: item.qty,
-              unitPrice: item.unitPrice,
-              channelListingId: item.channelListingId,
-            })),
+          create: resolvedItems,
         },
       },
     });
