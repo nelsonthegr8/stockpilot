@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { DeleteOrderButton } from "@/components/dashboard/DeleteOrderButton";
 import { PageHeader } from "@/components/dashboard/shared";
+import { AutoRefresh } from "@/components/dashboard/AutoRefresh";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-gray-100 text-gray-800",
@@ -37,6 +38,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: { sta
 
   return (
     <div className="p-6 space-y-4">
+      <AutoRefresh />
       <PageHeader
         title="Orders"
         description="View and manage customer orders."
