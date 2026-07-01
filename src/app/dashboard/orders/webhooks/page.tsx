@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/dashboard/shared";
+import { WebhookPayloadButton } from "@/components/dashboard/WebhookPayloadButton";
 import Link from "next/link";
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -61,6 +62,7 @@ export default async function WebhookLogsPage({ searchParams }: { searchParams: 
                 <TableHead>Status</TableHead>
                 <TableHead>Order</TableHead>
                 <TableHead>Error</TableHead>
+                <TableHead>Payload</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -86,11 +88,14 @@ export default async function WebhookLogsPage({ searchParams }: { searchParams: 
                   <TableCell className="max-w-xs truncate text-xs text-destructive">
                     {log.errorMsg ?? "—"}
                   </TableCell>
+                  <TableCell>
+                    <WebhookPayloadButton payload={log.rawPayload} />
+                  </TableCell>
                 </TableRow>
               ))}
               {logs.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     No webhook logs yet.
                   </TableCell>
                 </TableRow>
