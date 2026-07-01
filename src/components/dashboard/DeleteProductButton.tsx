@@ -4,6 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type Props = {
   productId: string;
@@ -14,7 +23,7 @@ type Props = {
 
 export function DeleteProductButton({ productId, productName, redirectTo = "/dashboard/products", size = "default" }: Props) {
   const router = useRouter();
-  const [confirming, setConfirming] = useState(false);
+  const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,15 +35,14 @@ export function DeleteProductButton({ productId, productName, redirectTo = "/das
       if (res.status === 409) {
         const body = await res.json();
         setError(body.error ?? "Cannot delete — inventory exists.");
-        setConfirming(false);
         return;
       }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         setError(body.error ?? "Delete failed. Please try again.");
-        setConfirming(false);
         return;
       }
+      setOpen(false);
       router.push(redirectTo);
       router.refresh();
     } finally {
@@ -43,29 +51,35 @@ export function DeleteProductButton({ productId, productName, redirectTo = "/das
   }
 
   return (
-    <div className="flex flex-col gap-1">
-      {error && <p className="text-xs text-destructive">{error}</p>}
-      {confirming ? (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-destructive font-medium">Delete &quot;{productName}&quot;?</span>
-          <Button size={size} variant="destructive" onClick={handleDelete} disabled={deleting}>
-            {deleting ? "Deleting…" : "Confirm"}
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setError(null); }}>
+      <DialogTrigger
+        render={
+          <Button
+            size={size}
+            variant="ghost"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          />
+        }
+      >
+        <Trash2 className="h-4 w-4" />
+        {size !== "sm" && <span className="ml-2">Delete</span>}
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete product?</DialogTitle>
+          <DialogDescription>
+            This will permanently delete <strong>{productName}</strong> and all its variants and SKUs. This cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={deleting}>Cancel</Button>
+          <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+            {deleting ? "Deleting…" : "Delete"}
           </Button>
-          <Button size={size} variant="outline" onClick={() => { setConfirming(false); setError(null); }} disabled={deleting}>
-            Cancel
-          </Button>
-        </div>
-      ) : (
-        <Button
-          size={size}
-          variant="ghost"
-          onClick={() => setConfirming(true)}
-          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-        >
-          <Trash2 className="h-4 w-4" />
-          {size !== "sm" && <span className="ml-2">Delete Product</span>}
-        </Button>
-      )}
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
+
