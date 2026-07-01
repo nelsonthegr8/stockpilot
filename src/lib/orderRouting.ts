@@ -1,5 +1,6 @@
 import { BusinessProfileType, OrderStatus, PrintJobStatus } from "@prisma/client";
 import { prisma } from "./prisma";
+import { queuePrint } from "./bambubuddy";
 
 export async function routeOrder(orderId: string): Promise<void> {
   const order = await prisma.order.findUniqueOrThrow({
@@ -10,6 +11,8 @@ export async function routeOrder(orderId: string): Promise<void> {
   });
 
   let allItemsReady = true;
+  // ponytail: read once per routeOrder call rather than per print job
+  const bambuEnabled = (await prisma.appSetting.findFirst({ where: { key: "bambubuddy_enabled" } }))?.value === "true";
 
   for (const item of order.items) {
     const product = item.sku.variant.product;
@@ -37,7 +40,7 @@ export async function routeOrder(orderId: string): Promise<void> {
         const configs = item.sku.variantPrintConfigs;
         if (configs.length > 0) {
           for (const config of configs) {
-            await prisma.printJob.create({
+            const job = await prisma.printJob.create({
               data: {
                 orderId: order.id,
                 orderItemId: item.id,
@@ -46,6 +49,28 @@ export async function routeOrder(orderId: string): Promise<void> {
                 status: PrintJobStatus.QUEUED,
               },
             });
+            if (bambuEnabled) {
+              try {
+                const bambuJobId = await queuePrint(
+                  {
+                    targetModel: config.targetModel,
+                    filamentType: config.filamentType,
+                    filamentOverrides: config.filamentOverrides,
+                    archiveId: config.archiveId,
+                    plateId: config.plateId,
+                    projectId: config.projectId ?? null,
+                  },
+                  item.qty,
+                  job.id,
+                );
+                await prisma.printJob.update({
+                  where: { id: job.id },
+                  data: { status: PrintJobStatus.SENT_TO_BAMBUBUDDY, bambuJobId },
+                });
+              } catch {
+                // queuePrint already logged the error to OutboundLog — leave status as QUEUED
+              }
+            }
           }
         } else {
           await prisma.printJob.create({
