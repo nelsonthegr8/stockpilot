@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
+import { PageHeader } from "@/components/dashboard/shared";
 
 export default async function InventoryPage() {
   await auth();
@@ -15,15 +16,18 @@ export default async function InventoryPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Inventory Levels</h1>
-        <div className="flex gap-2">
-          <Link href="/dashboard/inventory/audit" className={buttonVariants({ variant: "outline" })}>Audit</Link>
-          <Link href="/dashboard/inventory/count" className={buttonVariants({ variant: "outline" })}>Cycle Count</Link>
-          <Link href="/dashboard/inventory/receive/printed-parts" className={buttonVariants({ variant: "outline" })}>Receive Printed Parts</Link>
-          <Link href="/dashboard/inventory/receive" className={buttonVariants()}>Receive</Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Inventory Levels"
+        description="Stock on hand, reserved, and available by location."
+        action={
+          <div className="flex gap-2">
+            <Link href="/dashboard/inventory/audit" className={buttonVariants({ variant: "outline" })}>Audit</Link>
+            <Link href="/dashboard/inventory/count" className={buttonVariants({ variant: "outline" })}>Cycle Count</Link>
+            <Link href="/dashboard/inventory/receive/printed-parts" className={buttonVariants({ variant: "outline" })}>Receive Printed Parts</Link>
+            <Link href="/dashboard/inventory/receive" className={buttonVariants()}>Receive</Link>
+          </div>
+        }
+      />
       <Card>
         <CardContent className="pt-4">
           <Table>
