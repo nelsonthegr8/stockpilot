@@ -30,22 +30,55 @@ export function normalizeOrder(raw: unknown, channelType: string): NormalizedOrd
 
 function normalizeShopify(r: Record<string, unknown>): NormalizedOrder {
   const sa = r.shipping_address as Record<string, string> | undefined;
-  const customer = r.customer as Record<string, string> | undefined;
+  const customer = r.customer as Record<string, unknown> | undefined;
+  const customerName = customer
+    ? `${customer.first_name ?? ""} ${customer.last_name ?? ""}`.trim()
+    : (sa?.name ?? "");
+  const customerEmail =
+    (customer?.email as string) ||
+    (r.email as string) ||
+    (r.contact_email as string) ||
+    "";
+
+  const rawItems = (r.line_items as Record<string, unknown>[]) ?? [];
+
+  // Aggregate items by variant_id — Shopify sometimes sends qty:1 lines for
+  // the same variant instead of a single line with qty:N
+  const aggregated = new Map<string, { channelListingId: string; qty: number; unitPrice: number; sku?: string }>();
+  for (const li of rawItems) {
+    const variantId = li.variant_id != null ? String(li.variant_id) : null;
+    const key = variantId ?? `li-${li.id}`;
+    const qty = (li.quantity as number) ?? 1;
+    const unitPrice = parseFloat((li.price as string) ?? "0");
+    const skuCode = typeof li.sku === "string" && li.sku.trim() !== "" ? li.sku.trim() : undefined;
+
+    if (aggregated.has(key)) {
+      aggregated.get(key)!.qty += qty;
+    } else {
+      aggregated.set(key, {
+        channelListingId: variantId ?? String(li.id),
+        qty,
+        unitPrice,
+        sku: skuCode,
+      });
+    }
+  }
+
   return {
     channelOrderId: String(r.id),
-    customerName: sa ? `${sa.first_name} ${sa.last_name}` : (customer?.first_name ?? ""),
-    customerEmail: (r.email as string) ?? "",
+    customerName,
+    customerEmail,
     shippingAddress: sa ?? {},
     subtotal: parseFloat((r.subtotal_price as string) ?? "0"),
-    shippingCost: parseFloat((r.total_shipping_price_set as Record<string, Record<string, string>>)?.shop_money?.amount ?? "0"),
+    shippingCost: parseFloat(
+      (r.total_shipping_price_set as Record<string, Record<string, string>> | undefined)
+        ?.shop_money?.amount ?? "0"
+    ),
     channelFees: 0,
     total: parseFloat((r.total_price as string) ?? "0"),
     currency: (r.currency as string) ?? "USD",
-    items: ((r.line_items as unknown[]) ?? []).map((li) => {
-      const l = li as Record<string, unknown>;
-      return { channelListingId: String(l.variant_id), qty: l.quantity as number, unitPrice: parseFloat(l.price as string), sku: l.sku as string };
-    }),
-    placedAt: new Date(r.created_at as string),
+    items: Array.from(aggregated.values()),
+    placedAt: new Date((r.created_at as string) ?? Date.now()),
   };
 }
 
