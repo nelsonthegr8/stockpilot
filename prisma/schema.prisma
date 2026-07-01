@@ -322,6 +322,19 @@ model WebhookLog {
   createdAt  DateTime @default(now())
 }
 
+model OutboundLog {
+  id           String   @id @default(cuid())
+  service      String   // "BAMBUBUDDY", "SHIPPO", etc.
+  action       String   // e.g. "queue_print"
+  status       String   // "success" | "error"
+  requestBody  Json
+  responseBody Json?
+  errorMsg     String?
+  printJobId   String?
+  printJob     PrintJob? @relation(fields: [printJobId], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+}
+
 model OrderItem {
   id               String  @id @default(cuid())
   orderId          String
@@ -373,6 +386,8 @@ model PrintJob {
   errorMessage         String?
   notes                String?
   createdAt            DateTime            @default(now())
+
+  outboundLogs OutboundLog[]
 }
 
 model Printer {

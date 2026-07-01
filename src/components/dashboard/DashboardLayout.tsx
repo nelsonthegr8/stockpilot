@@ -28,6 +28,7 @@ import {
   Sun,
   Moon,
   Webhook,
+  Send,
 } from "lucide-react";
 
 interface NavItem {
@@ -59,6 +60,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Fulfillment",
     items: [
       { href: "/dashboard/print-queue", label: "Print Queue", icon: Printer },
+      { href: "/dashboard/print-queue/outbox", label: "BambuBuddy Outbox", icon: Send, roles: ["ADMIN", "MANAGER"] },
       { href: "/dashboard/picking", label: "Picking", icon: ListChecks },
       { href: "/dashboard/shipping", label: "Shipping", icon: Truck },
     ],
