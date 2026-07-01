@@ -22,12 +22,32 @@ export default function InventoryReceivePage() {
   const [adhocSkuId, setAdhocSkuId] = useState("");
   const [adhocQty, setAdhocQty] = useState("1");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetch("/api/purchase-orders").then((r) => r.json()), fetch("/api/locations").then((r) => r.json()), fetch("/api/skus").then((r) => r.json())]).then(([poData, locationData, skuData]) => { setPurchaseOrders(poData); setLocations(locationData); setSkus(skuData); setSelectedLocationId(locationData[0]?.id ?? ""); });
+    Promise.all([
+      fetch("/api/purchase-orders").then((r) => r.json()),
+      fetch("/api/locations").then((r) => r.json()),
+      fetch("/api/skus?limit=500").then((r) => r.json()),
+    ])
+      .then(([poData, locationData, skuData]) => {
+        setPurchaseOrders(Array.isArray(poData) ? poData : []);
+        setLocations(Array.isArray(locationData) ? locationData : []);
+        // /api/skus returns { skus: [], total: N } — extract the array
+        const skuArray = Array.isArray(skuData) ? skuData : (skuData?.skus ?? []);
+        setSkus(skuArray);
+        setSelectedLocationId(locationData[0]?.id ?? "");
+      })
+      .catch((err) => {
+        console.error("Failed to load receive data:", err);
+        setMessage("Failed to load data. Please refresh.");
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const selectedPo = useMemo(() => purchaseOrders.find((po) => po.id === selectedPoId) ?? null, [purchaseOrders, selectedPoId]);
+
+  if (loading) return <div className="p-6 text-muted-foreground">Loading...</div>;
 
   function registerScan(code: string) {
     if (!selectedPo) return;

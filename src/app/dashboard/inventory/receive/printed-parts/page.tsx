@@ -17,12 +17,30 @@ export default function PrintedPartsReceivePage() {
   const [skuId, setSkuId] = useState("");
   const [qty, setQty] = useState("1");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetch("/api/locations").then((r) => r.json()), fetch("/api/skus").then((r) => r.json())]).then(([locationData, skuData]) => { setLocations(locationData); setSkus(skuData); setLocationId(locationData[0]?.id ?? ""); });
+    Promise.all([
+      fetch("/api/locations").then((r) => r.json()),
+      fetch("/api/skus?limit=500").then((r) => r.json()),
+    ])
+      .then(([locationData, skuData]) => {
+        setLocations(Array.isArray(locationData) ? locationData : []);
+        // /api/skus returns { skus: [], total: N } — extract the array
+        const skuArray = Array.isArray(skuData) ? skuData : (skuData?.skus ?? []);
+        setSkus(skuArray);
+        setLocationId(locationData[0]?.id ?? "");
+      })
+      .catch((err) => {
+        console.error("Failed to load receive data:", err);
+        setMessage("Failed to load data. Please refresh.");
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = skus.filter((sku) => !search || sku.sku.toLowerCase().includes(search.toLowerCase()) || sku.barcode?.includes(search));
+
+  if (loading) return <div className="p-6 text-muted-foreground">Loading...</div>;
 
   async function confirmReceipt() {
     await fetch("/api/inventory/adjust", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ skuId, locationId, qty: Number(qty), reason: "PRINTED_PARTS_RECEIVE" }) });
