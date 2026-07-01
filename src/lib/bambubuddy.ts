@@ -1,4 +1,4 @@
-import { PrintJobStatus } from "@prisma/client";
+import { Prisma, PrintJobStatus } from "@prisma/client";
 import { prisma } from "./prisma";
 import { decrypt } from "./encrypt";
 
@@ -29,14 +29,14 @@ async function getConfig(): Promise<{ url: string; apiKey: string; enabled: bool
   return { url, apiKey, enabled };
 }
 
-export async function queuePrint(config: VariantPrintConfigData, qty: number): Promise<number> {
+export async function queuePrint(config: VariantPrintConfigData, qty: number, printJobId?: string): Promise<number> {
   const { url, apiKey } = await getConfig();
   const payload = {
     printer_id: null,
     target_model: config.targetModel,
     target_location: null,
     required_filament_types: [config.filamentType],
-    filament_overrides: config.filamentOverrides,
+    filament_overrides: config.filamentOverrides as Prisma.InputJsonValue,
     archive_id: config.archiveId,
     library_file_id: null,
     scheduled_time: null,
@@ -55,14 +55,57 @@ export async function queuePrint(config: VariantPrintConfigData, qty: number): P
     quantity: qty,
     project_id: config.projectId,
   };
-  const res = await fetch(`${url}/api/v1/queue/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error(`BambuBuddy queue failed: ${res.status}`);
-  const data = await res.json();
-  return data.id as number;
+
+  let responseBody: unknown = null;
+  try {
+    const res = await fetch(`${url}/api/v1/queue/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+      body: JSON.stringify(payload),
+    });
+    responseBody = await res.json().catch(() => ({ status: res.status }));
+    if (!res.ok) {
+      await prisma.outboundLog.create({
+        data: {
+          service: "BAMBUBUDDY",
+          action: "queue_print",
+          status: "error",
+          requestBody: { url: `${url}/api/v1/queue/`, payload },
+          responseBody: responseBody as object,
+          errorMsg: `HTTP ${res.status}`,
+          printJobId,
+        },
+      });
+      throw new Error(`BambuBuddy queue failed: ${res.status}`);
+    }
+    await prisma.outboundLog.create({
+      data: {
+        service: "BAMBUBUDDY",
+        action: "queue_print",
+        status: "success",
+        requestBody: { url: `${url}/api/v1/queue/`, payload },
+        responseBody: responseBody as object,
+        printJobId,
+      },
+    });
+    return (responseBody as { id: number }).id;
+  } catch (err) {
+    // ponytail: only log fetch-level errors here; HTTP errors are already logged above
+    if (responseBody === null) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      await prisma.outboundLog.create({
+        data: {
+          service: "BAMBUBUDDY",
+          action: "queue_print",
+          status: "error",
+          requestBody: { url: `${url}/api/v1/queue/`, payload },
+          errorMsg,
+          printJobId,
+        },
+      });
+    }
+    throw err;
+  }
 }
 
 export async function pollQueue(url: string, apiKey: string): Promise<Array<{ id: number; status: string }>> {
